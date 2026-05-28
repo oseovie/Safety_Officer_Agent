@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Worksite Safety Agent</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">Safety Officer Agent</p>
+        <h1>Worksite risk desk</h1>
+      </div>
+      <div class="status-pill" id="siteStatus">No hazards logged</div>
+    </header>
+
+    <main class="layout">
+      <section class="panel assessment-panel" aria-labelledby="assessmentTitle">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">Assessment</p>
+            <h2 id="assessmentTitle">Hazard review</h2>
+          </div>
+          <button class="ghost-button" id="clearReportButton" type="button">Clear report</button>
+        </div>
+
+        <form id="assessmentForm" class="form-grid">
+          <label>
+            Task or work activity
+            <input name="task" placeholder="Roof inspection" required>
+          </label>
+
+          <label>
+            Main hazard observed
+            <textarea name="hazard" placeholder="Fall from height near open edge" required></textarea>
+          </label>
+
+          <label>
+            People at risk
+            <input name="people_at_risk" placeholder="Workers, visitors, subcontractors" required>
+          </label>
+
+          <div class="score-row">
+            <label>
+              Location
+              <input name="location" placeholder="Sector 4 / Level 2" required>
+            </label>
+
+            <label>
+              CAPA owner
+              <input name="owner" placeholder="Site superintendent" required>
+            </label>
+          </div>
+
+          <label>
+            Deadline hours
+            <input name="deadline_hours" type="number" min="1" value="24" required>
+          </label>
+
+          <div class="score-row">
+            <label>
+              Initial likelihood
+              <select name="likelihood">
+                <option value="" selected>Auto-score</option>
+                <option value="1">1 - Rare</option>
+                <option value="2">2 - Unlikely</option>
+                <option value="3">3 - Possible</option>
+                <option value="4">4 - Likely</option>
+                <option value="5">5 - Almost certain</option>
+              </select>
+            </label>
+
+            <label>
+              Initial severity
+              <select name="severity">
+                <option value="" selected>Auto-score</option>
+                <option value="1">1 - Minor first aid</option>
+                <option value="2">2 - Medical treatment</option>
+                <option value="3">3 - Lost time injury</option>
+                <option value="4">4 - Serious injury</option>
+                <option value="5">5 - Fatality risk</option>
+              </select>
+            </label>
+          </div>
+
+          <button class="primary-button" type="submit">Log risk</button>
+        </form>
+      </section>
+
+      <aside class="panel result-panel" aria-labelledby="resultTitle">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">Current finding</p>
+            <h2 id="resultTitle">Risk summary</h2>
+          </div>
+        </div>
+
+        <div id="resultEmpty" class="empty-state">Submit a hazard to see the recommended controls.</div>
+        <div id="resultCard" class="risk-card hidden"></div>
+      </aside>
+
+      <section class="panel checklist-panel" aria-labelledby="checklistTitle">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">Pre-task</p>
+            <h2 id="checklistTitle">Checklist</h2>
+          </div>
+          <button class="ghost-button" id="resetChecklistButton" type="button">Reset</button>
+        </div>
+        <div id="checklist" class="checklist"></div>
+        <div class="checklist-summary" id="checklistSummary">Loading checklist...</div>
+      </section>
+
+      <section class="panel toolbox-panel" aria-labelledby="toolboxTitle">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">Briefing</p>
+            <h2 id="toolboxTitle">Toolbox talk</h2>
+          </div>
+        </div>
+
+        <form id="toolboxForm" class="toolbox-form">
+          <label>
+            Topic or task
+            <input name="topic" placeholder="Confined space entry" required>
+          </label>
+          <button class="secondary-button" type="submit">Build talk</button>
+        </form>
+        <ul id="toolboxOutput" class="talk-list"></ul>
+      </section>
+
+      <section class="panel whatsapp-panel" aria-labelledby="whatsappTitle">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">WhatsApp</p>
+            <h2 id="whatsappTitle">Message agent</h2>
+          </div>
+        </div>
+
+        <form id="whatsappForm" class="toolbox-form">
+          <label>
+            Test message
+            <textarea name="message" placeholder="assess Roof work | fall from height | workers | Sector 4 | Site superintendent | 24" required></textarea>
+          </label>
+          <button class="secondary-button" type="submit">Test reply</button>
+        </form>
+        <div id="whatsappOutput" class="whatsapp-output empty-state">Try help, overdue, toolbox lifting, or an assess command.</div>
+      </section>
+
+      <section class="panel analytics-panel" aria-labelledby="analyticsTitle">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">Trends</p>
+            <h2 id="analyticsTitle">Risk analytics</h2>
+          </div>
+        </div>
+        <div class="report-stats">
+          <div><strong id="openCount">0</strong><span>Open</span></div>
+          <div><strong id="criticalCount">0</strong><span>Open critical</span></div>
+          <div><strong id="categoryCount">0</strong><span>Categories</span></div>
+          <div><strong id="hotspotCount">0</strong><span>Hot spots</span></div>
+        </div>
+        <div id="analyticsList" class="report-list"></div>
+      </section>
+
+      <section class="panel predictive-panel" aria-labelledby="predictiveTitle">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">Predictive</p>
+            <h2 id="predictiveTitle">Tomorrow's JHA</h2>
+          </div>
+        </div>
+        <div id="predictiveList" class="report-list"></div>
+      </section>
+
+      <section class="panel report-panel" aria-labelledby="reportTitle">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">Site log</p>
+            <h2 id="reportTitle">Action report</h2>
+          </div>
+          <div class="export-actions">
+            <a class="ghost-link" href="/export/risks.csv">CSV</a>
+            <a class="ghost-link" href="/export/risks.pdf">PDF</a>
+            <a class="ghost-link" href="/export/report" target="_blank" rel="noreferrer">Print</a>
+          </div>
+        </div>
+
+        <div class="filter-bar">
+          <label>
+            Search
+            <input id="riskSearch" type="search" placeholder="Hazard, owner, location, category">
+          </label>
+          <label>
+            Status
+            <select id="statusFilter">
+              <option value="all">All</option>
+              <option value="open">Open</option>
+              <option value="in progress">In Progress</option>
+              <option value="closed">Closed</option>
+              <option value="overdue">Overdue</option>
+            </select>
+          </label>
+          <label>
+            Level
+            <select id="levelFilter">
+              <option value="all">All</option>
+              <option value="critical">Critical</option>
+              <option value="high">High</option>
+              <option value="medium">Medium</option>
+              <option value="low">Low</option>
+            </select>
+          </label>
+          <label>
+            Category
+            <select id="categoryFilter">
+              <option value="all">All</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="report-stats">
+          <div><strong id="totalCount">0</strong><span>Total</span></div>
+          <div><strong id="highCount">0</strong><span>High/Critical</span></div>
+          <div><strong id="mediumCount">0</strong><span>Medium</span></div>
+          <div><strong id="lowCount">0</strong><span>Low</span></div>
+        </div>
+        <div id="reportList" class="report-list"></div>
+      </section>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>

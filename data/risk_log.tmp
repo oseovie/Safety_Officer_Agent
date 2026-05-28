@@ -1,0 +1,213 @@
+[
+  {
+    "id": "1c24cad6f4",
+    "created_at": "2026-05-27T18:33:41Z",
+    "status": "Open",
+    "task": "Roof work",
+    "hazard": "fall from height",
+    "people_at_risk": "workers",
+    "location": "Sector 1",
+    "category": "Falls",
+    "initial_likelihood": 3,
+    "initial_severity": 5,
+    "initial_score": 15,
+    "initial_level": "High",
+    "hierarchy_of_controls": {
+      "elimination": [
+        "Perform the work from ground level where practicable."
+      ],
+      "substitution": [
+        "Use extendable tools or prefabricated assemblies to reduce work at height."
+      ],
+      "engineering": [
+        "Install guardrails, covers, toe boards, or certified work platforms."
+      ],
+      "administrative": [
+        "Use a work-at-height permit, exclusion zone, rescue plan, and competent supervision."
+      ],
+      "ppe": [
+        "Use inspected harnesses, lanyards, anchor points, helmets, and non-slip footwear."
+      ]
+    },
+    "residual_likelihood": 1,
+    "residual_severity": 4,
+    "residual_score": 4,
+    "residual_level": "Low",
+    "owner": "Foreman Ada",
+    "deadline_hours": 24,
+    "due_at": "2026-05-28T18:33:41Z",
+    "critical": true,
+    "verification_required": "Photo, supervisor sign-off, or inspection record is required to close.",
+    "reminders_sent": 0
+  },
+  {
+    "id": "0989599abd",
+    "created_at": "2026-05-27T18:33:40Z",
+    "status": "Closed",
+    "task": "Crane lift",
+    "hazard": "suspended load over walkway",
+    "people_at_risk": "riggers",
+    "location": "Sector 2",
+    "category": "Struck-By",
+    "initial_likelihood": 3,
+    "initial_severity": 4,
+    "initial_score": 12,
+    "initial_level": "Medium",
+    "hierarchy_of_controls": {
+      "elimination": [
+        "Remove overhead work while crews are below."
+      ],
+      "substitution": [
+        "Use lighter materials or tool tether systems where possible."
+      ],
+      "engineering": [
+        "Install debris nets, barricades, physical exclusion zones, and lifting restraints."
+      ],
+      "administrative": [
+        "Sequence work to separate trades and assign a spotter or banksman."
+      ],
+      "ppe": [
+        "Use hard hats, high-visibility clothing, eye protection, and safety boots."
+      ]
+    },
+    "residual_likelihood": 1,
+    "residual_severity": 3,
+    "residual_score": 3,
+    "residual_level": "Low",
+    "owner": "Lift supervisor",
+    "deadline_hours": 8,
+    "due_at": "2026-05-28T02:33:40Z",
+    "critical": false,
+    "verification_required": "Photo, supervisor sign-off, or inspection record is required to close.",
+    "reminders_sent": 0,
+    "verification_note": "Photo uploaded and walkway barricaded",
+    "updated_at": "2026-05-27T18:33:41Z",
+    "closed_at": "2026-05-27T18:33:41Z"
+  },
+  {
+    "id": "d501f1b883",
+    "created_at": "2026-05-27T18:33:11Z",
+    "status": "Closed",
+    "task": "Temporary power setup",
+    "hazard": "Water leaking near temporary electrical panel",
+    "people_at_risk": "electricians",
+    "location": "Sector 4",
+    "category": "Electrocution",
+    "initial_likelihood": 5,
+    "initial_severity": 5,
+    "initial_score": 25,
+    "initial_level": "Critical",
+    "hierarchy_of_controls": {
+      "elimination": [
+        "De-energize and remove temporary power exposure before work starts."
+      ],
+      "substitution": [
+        "Use battery-powered tools or lower-voltage systems where suitable."
+      ],
+      "engineering": [
+        "Install GFCI/RCD protection, covers, cable supports, and physical barriers."
+      ],
+      "administrative": [
+        "Use lockout/tagout, permits, signage, and authorized electrical workers only."
+      ],
+      "ppe": [
+        "Use arc-rated PPE, insulated gloves, eye protection, and dielectric footwear as required."
+      ]
+    },
+    "residual_likelihood": 3,
+    "residual_severity": 4,
+    "residual_score": 12,
+    "residual_level": "Medium",
+    "owner": "Site Superintendent",
+    "deadline_hours": 4,
+    "due_at": "2026-05-27T22:33:11Z",
+    "critical": true,
+    "verification_required": "Photo, supervisor sign-off, or inspection record is required to close.",
+    "reminders_sent": 0,
+    "verification_note": "jbjcjcfdsd",
+    "updated_at": "2026-05-27T19:03:17Z",
+    "closed_at": "2026-05-27T19:03:17Z"
+  },
+  {
+    "id": "63b6045b46",
+    "created_at": "2026-05-27T18:09:56Z",
+    "status": "Open",
+    "task": "Crane lift",
+    "hazard": "suspended load over walkway",
+    "people_at_risk": "riggers",
+    "location": "Sector 2",
+    "category": "Struck-By",
+    "initial_likelihood": 3,
+    "initial_severity": 4,
+    "initial_score": 12,
+    "initial_level": "Medium",
+    "hierarchy_of_controls": {
+      "elimination": [
+        "Remove overhead work while crews are below."
+      ],
+      "substitution": [
+        "Use lighter materials or tool tether systems where possible."
+      ],
+      "engineering": [
+        "Install debris nets, barricades, physical exclusion zones, and lifting restraints."
+      ],
+      "administrative": [
+        "Sequence work to separate trades and assign a spotter or banksman."
+      ],
+      "ppe": [
+        "Use hard hats, high-visibility clothing, eye protection, and safety boots."
+      ]
+    },
+    "residual_likelihood": 1,
+    "residual_severity": 3,
+    "residual_score": 3,
+    "residual_level": "Low",
+    "owner": "Lift supervisor",
+    "deadline_hours": 8,
+    "due_at": "2026-05-28T02:09:56Z",
+    "critical": false,
+    "verification_required": "Photo, supervisor sign-off, or inspection record is required to close.",
+    "reminders_sent": 0
+  },
+  {
+    "id": "825c4ed1c4",
+    "created_at": "2026-05-27T18:08:16Z",
+    "status": "Open",
+    "task": "Temporary power setup",
+    "hazard": "Water leaking near temporary electrical panel",
+    "people_at_risk": "electricians",
+    "location": "Sector 4",
+    "category": "Electrocution",
+    "initial_likelihood": 5,
+    "initial_severity": 5,
+    "initial_score": 25,
+    "initial_level": "Critical",
+    "hierarchy_of_controls": {
+      "elimination": [
+        "De-energize and remove temporary power exposure before work starts."
+      ],
+      "substitution": [
+        "Use battery-powered tools or lower-voltage systems where suitable."
+      ],
+      "engineering": [
+        "Install GFCI/RCD protection, covers, cable supports, and physical barriers."
+      ],
+      "administrative": [
+        "Use lockout/tagout, permits, signage, and authorized electrical workers only."
+      ],
+      "ppe": [
+        "Use arc-rated PPE, insulated gloves, eye protection, and dielectric footwear as required."
+      ]
+    },
+    "residual_likelihood": 3,
+    "residual_severity": 4,
+    "residual_score": 12,
+    "residual_level": "Medium",
+    "owner": "Site Superintendent",
+    "deadline_hours": 4,
+    "due_at": "2026-05-27T22:08:16Z",
+    "critical": true,
+    "verification_required": "Photo, supervisor sign-off, or inspection record is required to close.",
+    "reminders_sent": 0
+  }
+]
