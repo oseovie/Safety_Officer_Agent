@@ -11,24 +11,11 @@ from __future__ import annotations
 
 import json
 import os
-from csv import DictWriter
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from io import StringIO
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
-from pdf_export import build_pdf
-from safety_agent import CHECKLIST, suggest_controls
-from risk_engine import (
-    RiskInput,
-    analytics,
-    load_risks,
-    log_hazard,
-    overdue_open_risks,
-    parse_score,
-    predictive_jha,
-    update_status,
-)
+from safety_agent import CHECKLIST, Hazard, suggest_controls
 from whatsapp_agent import build_whatsapp_reply, extract_text_messages, send_whatsapp_text
 
 
@@ -36,46 +23,51 @@ ROOT = Path(__file__).parent
 STATIC_DIR = ROOT / "static"
 HOST = "127.0.0.1"
 PORT = 8000
-ERROR_PAGE = """<!doctype html>
+
+
+def html_page(title: str, content: str, css_class: str = "") -> str:
+    """Helper to generate HTML page template with consistent boilerplate."""
+    return f"""<!doctype html>
 <html lang="en">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Safety Agent Error</title>
+    <title>{title}</title>
     <link rel="stylesheet" href="/styles.css">
   </head>
   <body>
-    <main class="error-page">
-      <section class="panel error-panel">
+    <main class="{css_class}">
+      {content}
+    </main>
+  </body>
+</html>
+"""
+
+
+ERROR_PAGE = html_page(
+    "Safety Agent Error",
+    """<section class="panel error-panel">
         <p class="eyebrow">Safety Agent</p>
         <h1>{title}</h1>
         <p>{message}</p>
         <a class="home-link" href="/">Return to dashboard</a>
-      </section>
-    </main>
-  </body>
-</html>
-"""
-REPORT_PAGE = """<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Safety Risk Register</title>
-    <link rel="stylesheet" href="/styles.css">
-  </head>
-  <body>
-    <main class="print-report">
-      <header class="print-header">
-        <p class="eyebrow">Risk Management Engine</p>
-        <h1>Safety Risk Register</h1>
-        <p>Generated from the local safety documentation log.</p>
-      </header>
-      {rows}
-    </main>
-  </body>
-</html>
-"""
+      </section>""",
+    "error-page"
+)
+
+
+def hazard_to_dict(hazard: Hazard) -> dict[str, object]:
+    return {
+        "task": hazard.task,
+        "hazard": hazard.hazard,
+        "people_at_risk": hazard.people_at_risk,
+        "likelihood": hazard.likelihood,
+        "severity": hazard.severity,
+        "score": hazard.score,
+        "level": hazard.level,
+        "action": hazard.action,
+        "controls": hazard.controls,
+    }
 
 
 def read_json(handler: BaseHTTPRequestHandler) -> dict[str, object]:
@@ -86,15 +78,12 @@ def read_json(handler: BaseHTTPRequestHandler) -> dict[str, object]:
     return json.loads(raw_body)
 
 
-def html_escape(value: object) -> str:
-    return (
-        str(value)
-        .replace("&", "&amp;")
-        .replace("<", "&lt;")
-        .replace(">", "&gt;")
-        .replace('"', "&quot;")
-        .replace("'", "&#039;")
-    )
+def parse_score(value: object) -> int | None:
+    if isinstance(value, bool) or not isinstance(value, int):
+        return None
+    if value not in range(1, 6):
+        return None
+    return value
 
 
 class SafetyRequestHandler(BaseHTTPRequestHandler):
@@ -107,34 +96,6 @@ class SafetyRequestHandler(BaseHTTPRequestHandler):
 
         if path == "/api/checklist":
             self.send_json({"items": CHECKLIST})
-            return
-
-        if path == "/api/risks":
-            self.send_json({"risks": load_risks()})
-            return
-
-        if path == "/api/analytics":
-            self.send_json(analytics())
-            return
-
-        if path == "/api/predictive-jha":
-            self.send_json({"items": predictive_jha()})
-            return
-
-        if path == "/api/capa/overdue":
-            self.send_json({"risks": overdue_open_risks()})
-            return
-
-        if path == "/export/risks.csv":
-            self.send_csv_export()
-            return
-
-        if path == "/export/report":
-            self.send_print_report()
-            return
-
-        if path == "/export/risks.pdf":
-            self.send_pdf_export()
             return
 
         if path == "/":
@@ -153,14 +114,6 @@ class SafetyRequestHandler(BaseHTTPRequestHandler):
 
         if path == "/api/assess":
             self.handle_assessment()
-            return
-
-        if path == "/api/risks":
-            self.handle_assessment()
-            return
-
-        if path == "/api/risks/status":
-            self.handle_status_update()
             return
 
         if path == "/api/toolbox":
@@ -192,9 +145,6 @@ class SafetyRequestHandler(BaseHTTPRequestHandler):
             task = str(payload.get("task", "")).strip()
             hazard_text = str(payload.get("hazard", "")).strip()
             people = str(payload.get("people_at_risk", "")).strip()
-            location = str(payload.get("location", "Unassigned")).strip() or "Unassigned"
-            owner = str(payload.get("owner", "Unassigned")).strip() or "Unassigned"
-            deadline_hours = payload.get("deadline_hours", 24)
             likelihood = parse_score(payload.get("likelihood"))
             severity = parse_score(payload.get("severity"))
 
@@ -202,59 +152,21 @@ class SafetyRequestHandler(BaseHTTPRequestHandler):
                 self.send_json({"error": "Task, hazard, and people at risk are required."}, 400)
                 return
 
-            if "likelihood" in payload and likelihood is None:
-                self.send_json({"error": "Likelihood must be a whole number from 1 to 5."}, 400)
-                return
-
-            if "severity" in payload and severity is None:
-                self.send_json({"error": "Severity must be a whole number from 1 to 5."}, 400)
-                return
-
-            if isinstance(deadline_hours, bool) or not isinstance(deadline_hours, int) or deadline_hours < 1:
-                self.send_json({"error": "Deadline must be a whole number of hours."}, 400)
-                return
-
-            if likelihood is None and severity is not None or likelihood is not None and severity is None:
+            if likelihood is None or severity is None:
                 self.send_json({"error": "Likelihood and severity must be whole numbers from 1 to 5."}, 400)
                 return
 
-            record = log_hazard(
-                RiskInput(
-                    task=task,
-                    hazard=hazard_text,
-                    people_at_risk=people,
-                    location=location,
-                    owner=owner,
-                    deadline_hours=deadline_hours,
-                    likelihood=likelihood,
-                    severity=severity,
-                )
+            hazard = Hazard(
+                task=task,
+                hazard=hazard_text,
+                people_at_risk=people,
+                likelihood=likelihood,
+                severity=severity,
+                controls=suggest_controls(f"{task} {hazard_text}"),
             )
-
-            self.send_json(record)
+            self.send_json(hazard_to_dict(hazard))
         except json.JSONDecodeError:
             self.send_json({"error": "Invalid assessment data."}, 400)
-        except OSError:
-            self.send_json({"error": "Risk log storage is unavailable. Try again after file sync completes."}, 500)
-
-    def handle_status_update(self) -> None:
-        try:
-            payload = read_json(self)
-            risk_id = str(payload.get("id", "")).strip()
-            status = str(payload.get("status", "")).strip()
-            note = str(payload.get("verification_note", "")).strip()
-            if not risk_id or not status:
-                self.send_json({"error": "Risk id and status are required."}, 400)
-                return
-            updated = update_status(risk_id, status, note)
-            if updated is None:
-                self.send_json({"error": "Risk not found or status is invalid."}, 400)
-                return
-            self.send_json({"risk": updated})
-        except json.JSONDecodeError:
-            self.send_json({"error": "Invalid status update data."}, 400)
-        except OSError:
-            self.send_json({"error": "Risk log storage is unavailable. Try again after file sync completes."}, 500)
 
     def handle_toolbox(self) -> None:
         try:
@@ -315,8 +227,6 @@ class SafetyRequestHandler(BaseHTTPRequestHandler):
             self.send_json({"status": "received", "processed": len(replies), "replies": replies})
         except json.JSONDecodeError:
             self.send_json({"error": "Invalid WhatsApp webhook data."}, 400)
-        except OSError:
-            self.send_json({"error": "Risk log storage is unavailable. Try again after file sync completes."}, 500)
 
     def handle_whatsapp_test(self) -> None:
         try:
@@ -328,90 +238,11 @@ class SafetyRequestHandler(BaseHTTPRequestHandler):
             self.send_json({"reply": build_whatsapp_reply(message)})
         except json.JSONDecodeError:
             self.send_json({"error": "Invalid WhatsApp test data."}, 400)
-        except OSError:
-            self.send_json({"error": "Risk log storage is unavailable. Try again after file sync completes."}, 500)
 
     def send_json(self, data: dict[str, object], status: int = 200) -> None:
         body = json.dumps(data).encode("utf-8")
         self.send_response(status)
         self.send_header("Content-Type", "application/json; charset=utf-8")
-        self.send_header("Content-Length", str(len(body)))
-        self.end_headers()
-        self.wfile.write(body)
-
-    def send_csv_export(self) -> None:
-        risks = load_risks()
-        output = StringIO()
-        fields = [
-            "id",
-            "created_at",
-            "status",
-            "task",
-            "hazard",
-            "people_at_risk",
-            "location",
-            "category",
-            "initial_likelihood",
-            "initial_severity",
-            "initial_score",
-            "initial_level",
-            "residual_likelihood",
-            "residual_severity",
-            "residual_score",
-            "residual_level",
-            "owner",
-            "due_at",
-            "verification_required",
-            "verification_note",
-            "closed_at",
-        ]
-        writer = DictWriter(output, fieldnames=fields, extrasaction="ignore")
-        writer.writeheader()
-        for risk in risks:
-            writer.writerow(risk)
-        body = output.getvalue().encode("utf-8-sig")
-        self.send_response(200)
-        self.send_header("Content-Type", "text/csv; charset=utf-8")
-        self.send_header("Content-Disposition", 'attachment; filename="safety-risk-register.csv"')
-        self.send_header("Content-Length", str(len(body)))
-        self.end_headers()
-        self.wfile.write(body)
-
-    def send_print_report(self) -> None:
-        rows = []
-        for risk in load_risks():
-            rows.append(
-                f"""
-                <article class="print-risk">
-                  <div class="print-risk-head">
-                    <h2>{html_escape(risk.get("task", ""))}</h2>
-                    <span>{html_escape(risk.get("initial_level", ""))} - {html_escape(risk.get("initial_score", ""))}/25</span>
-                  </div>
-                  <p><strong>ID:</strong> {html_escape(risk.get("id", ""))}</p>
-                  <p><strong>Status:</strong> {html_escape(risk.get("status", ""))}</p>
-                  <p><strong>Hazard:</strong> {html_escape(risk.get("hazard", ""))}</p>
-                  <p><strong>People at risk:</strong> {html_escape(risk.get("people_at_risk", ""))}</p>
-                  <p><strong>Location:</strong> {html_escape(risk.get("location", ""))}</p>
-                  <p><strong>Category:</strong> {html_escape(risk.get("category", ""))}</p>
-                  <p><strong>Residual risk:</strong> {html_escape(risk.get("residual_score", ""))}/25 ({html_escape(risk.get("residual_level", ""))})</p>
-                  <p><strong>Owner:</strong> {html_escape(risk.get("owner", ""))}</p>
-                  <p><strong>Due:</strong> {html_escape(risk.get("due_at", ""))}</p>
-                  <p><strong>Verification:</strong> {html_escape(risk.get("verification_note", risk.get("verification_required", "")))}</p>
-                </article>
-                """
-            )
-        body = REPORT_PAGE.format(rows="\n".join(rows) or "<p>No risks logged.</p>").encode("utf-8")
-        self.send_response(200)
-        self.send_header("Content-Type", "text/html; charset=utf-8")
-        self.send_header("Content-Length", str(len(body)))
-        self.end_headers()
-        self.wfile.write(body)
-
-    def send_pdf_export(self) -> None:
-        body = build_pdf(load_risks())
-        self.send_response(200)
-        self.send_header("Content-Type", "application/pdf")
-        self.send_header("Content-Disposition", 'attachment; filename="safety-risk-register.pdf"')
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
         self.wfile.write(body)
@@ -467,4 +298,4 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    main

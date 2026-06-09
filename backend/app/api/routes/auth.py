@@ -8,6 +8,7 @@ from app.db.session import get_db
 from app.models.tenant import Tenant
 from app.models.user import User
 from app.schemas.auth import LoginRequest, RegisterTenantRequest, TokenResponse
+from app.services.common import save_model
 
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -17,9 +18,7 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 def register_tenant(payload: RegisterTenantRequest, db: Session = Depends(get_db)) -> TokenResponse:
     if db.scalar(select(Tenant).where(Tenant.slug == payload.slug)):
         raise HTTPException(status_code=409, detail="Tenant slug already exists")
-    tenant = Tenant(name=payload.organization, slug=payload.slug, industry=payload.industry)
-    db.add(tenant)
-    db.flush()
+    tenant = save_model(db, Tenant(name=payload.organization, slug=payload.slug, industry=payload.industry), flush=True)
     user = User(
         tenant_id=tenant.id,
         email=str(payload.admin_email).lower(),
@@ -27,8 +26,7 @@ def register_tenant(payload: RegisterTenantRequest, db: Session = Depends(get_db
         hashed_password=hash_password(payload.admin_password),
         role=Role.OWNER.value,
     )
-    db.add(user)
-    db.commit()
+    save_model(db, user)
     return TokenResponse(access_token=create_access_token(user.id, tenant.id, user.role))
 
 

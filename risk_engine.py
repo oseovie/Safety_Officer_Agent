@@ -151,25 +151,35 @@ def ensure_data_files() -> None:
             )
 
 
-def load_risks() -> list[dict[str, object]]:
+def _read_json_file(filepath: Path) -> list[dict[str, object]]:
+    """Read JSON file with thread-safe locking."""
     ensure_data_files()
     with DATA_LOCK:
-        return json.loads(RISK_LOG.read_text(encoding="utf-8"))
+        return json.loads(filepath.read_text(encoding="utf-8"))
 
 
-def save_risks(risks: list[dict[str, object]]) -> None:
+def _write_json_file(filepath: Path, data: list[dict[str, object]]) -> None:
+    """Write JSON file with atomic replacement and fallback, thread-safe."""
     ensure_data_files()
     with DATA_LOCK:
-        temp_file = RISK_LOG.with_suffix(".tmp")
-        temp_file.write_text(json.dumps(risks, indent=2), encoding="utf-8")
+        temp_file = filepath.with_suffix(".tmp")
+        temp_file.write_text(json.dumps(data, indent=2), encoding="utf-8")
         try:
-            temp_file.replace(RISK_LOG)
+            temp_file.replace(filepath)
         except PermissionError:
-            RISK_LOG.write_text(json.dumps(risks, indent=2), encoding="utf-8")
+            filepath.write_text(json.dumps(data, indent=2), encoding="utf-8")
             try:
                 temp_file.unlink()
             except OSError:
                 pass
+
+
+def load_risks() -> list[dict[str, object]]:
+    return _read_json_file(RISK_LOG)
+
+
+def save_risks(risks: list[dict[str, object]]) -> None:
+    _write_json_file(RISK_LOG, risks)
 
 
 def parse_score(value: object) -> int | None:
@@ -362,8 +372,7 @@ def overdue_open_risks(hours_open: int = 24) -> list[dict[str, object]]:
 
 
 def predictive_jha() -> list[dict[str, object]]:
-    ensure_data_files()
-    schedule = json.loads(SCHEDULE_FILE.read_text(encoding="utf-8"))
+    schedule = _read_json_file(SCHEDULE_FILE)
     predictions: list[dict[str, object]] = []
 
     for item in schedule:

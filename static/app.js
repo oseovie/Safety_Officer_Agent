@@ -1,26 +1,56 @@
-const assessmentForm = document.querySelector("#assessmentForm");
-const toolboxForm = document.querySelector("#toolboxForm");
-const whatsappForm = document.querySelector("#whatsappForm");
-const resultEmpty = document.querySelector("#resultEmpty");
-const resultCard = document.querySelector("#resultCard");
-const checklist = document.querySelector("#checklist");
-const checklistSummary = document.querySelector("#checklistSummary");
-const toolboxOutput = document.querySelector("#toolboxOutput");
-const whatsappOutput = document.querySelector("#whatsappOutput");
-const reportList = document.querySelector("#reportList");
-const analyticsList = document.querySelector("#analyticsList");
-const predictiveList = document.querySelector("#predictiveList");
-const siteStatus = document.querySelector("#siteStatus");
-const clearReportButton = document.querySelector("#clearReportButton");
-const resetChecklistButton = document.querySelector("#resetChecklistButton");
-const totalCount = document.querySelector("#totalCount");
-const highCount = document.querySelector("#highCount");
-const mediumCount = document.querySelector("#mediumCount");
-const lowCount = document.querySelector("#lowCount");
-const openCount = document.querySelector("#openCount");
-const criticalCount = document.querySelector("#criticalCount");
-const categoryCount = document.querySelector("#categoryCount");
-const hotspotCount = document.querySelector("#hotspotCount");
+// Consolidated DOM element selectors
+const elements = {
+  assessmentForm: document.querySelector("#assessmentForm"),
+  toolboxForm: document.querySelector("#toolboxForm"),
+  whatsappForm: document.querySelector("#whatsappForm"),
+  resultEmpty: document.querySelector("#resultEmpty"),
+  resultCard: document.querySelector("#resultCard"),
+  checklist: document.querySelector("#checklist"),
+  checklistSummary: document.querySelector("#checklistSummary"),
+  toolboxOutput: document.querySelector("#toolboxOutput"),
+  whatsappOutput: document.querySelector("#whatsappOutput"),
+  reportList: document.querySelector("#reportList"),
+  analyticsList: document.querySelector("#analyticsList"),
+  predictiveList: document.querySelector("#predictiveList"),
+  siteStatus: document.querySelector("#siteStatus"),
+  clearReportButton: document.querySelector("#clearReportButton"),
+  resetChecklistButton: document.querySelector("#resetChecklistButton"),
+  totalCount: document.querySelector("#totalCount"),
+  highCount: document.querySelector("#highCount"),
+  mediumCount: document.querySelector("#mediumCount"),
+  lowCount: document.querySelector("#lowCount"),
+  openCount: document.querySelector("#openCount"),
+  criticalCount: document.querySelector("#criticalCount"),
+  categoryCount: document.querySelector("#categoryCount"),
+  hotspotCount: document.querySelector("#hotspotCount"),
+};
+
+// Destructure frequently used elements for convenience
+const {
+  assessmentForm,
+  toolboxForm,
+  whatsappForm,
+  resultEmpty,
+  resultCard,
+  checklist,
+  checklistSummary,
+  toolboxOutput,
+  whatsappOutput,
+  reportList,
+  analyticsList,
+  predictiveList,
+  siteStatus,
+  clearReportButton,
+  resetChecklistButton,
+  totalCount,
+  highCount,
+  mediumCount,
+  lowCount,
+  openCount,
+  criticalCount,
+  categoryCount,
+  hotspotCount,
+} = elements;
 
 let risks = [];
 
@@ -37,8 +67,18 @@ function escapeHtml(value) {
     .replaceAll("'", "&#039;");
 }
 
-async function getJson(url) {
-  const response = await fetch(url);
+async function fetchJson(url, options = {}) {
+  const { method = "GET", payload } = options;
+  const fetchOptions = {
+    method,
+    headers: { "Content-Type": "application/json" },
+  };
+  
+  if (payload) {
+    fetchOptions.body = JSON.stringify(payload);
+  }
+
+  const response = await fetch(url, fetchOptions);
   const data = await response.json();
   if (!response.ok) {
     throw new Error(data.error || "Request failed.");
@@ -46,18 +86,9 @@ async function getJson(url) {
   return data;
 }
 
-async function postJson(url, payload) {
-  const response = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-  const data = await response.json();
-  if (!response.ok) {
-    throw new Error(data.error || "Request failed.");
-  }
-  return data;
-}
+// Convenience wrappers for common use cases
+const getJson = (url) => fetchJson(url);
+const postJson = (url, payload) => fetchJson(url, { method: "POST", payload });
 
 function controlGroup(title, items) {
   return `

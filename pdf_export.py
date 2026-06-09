@@ -19,16 +19,23 @@ def pdf_escape(text: object) -> str:
     return str(text).replace("\\", "\\\\").replace("(", "\\(").replace(")", "\\)")
 
 
-def add_line(pages: list[list[str]], text: object = "", size: int = 10) -> None:
+def _ensure_page(pages: list[list[str]]) -> None:
+    """Ensure current page exists, add new one if full."""
     if not pages:
         pages.append([])
-    pages[-1].append((str(text), size))
     max_lines = int((PAGE_HEIGHT - (MARGIN * 2)) / LINE_HEIGHT)
     if len(pages[-1]) >= max_lines:
         pages.append([])
 
 
+def add_line(pages: list[list[str]], text: object = "", size: int = 10) -> None:
+    """Add a single line to pages, wrapping to new page if needed."""
+    _ensure_page(pages)
+    pages[-1].append((str(text), size))
+
+
 def add_wrapped(pages: list[list[str]], label: str, value: object, size: int = 10) -> None:
+    """Add a label and value as wrapped text to pages."""
     text = f"{label}: {value}"
     lines = wrap(text, width=MAX_TEXT_WIDTH) or [text]
     for line in lines:
